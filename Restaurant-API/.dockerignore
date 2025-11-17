@@ -1,3 +1,9 @@
+# Custom
+**/Properties/launchSettings.json
+appsettings*.json
+Controllers/TestController.cs
+
+
 # Created by https://www.toptal.com/developers/gitignore/api/aspnetcore
 # Edit at https://www.toptal.com/developers/gitignore?templates=aspnetcore
 
@@ -272,14 +278,3 @@ __pycache__/
 # tools/
 
 # End of https://www.toptal.com/developers/gitignore/api/aspnetcore
-
-# Custom
-**/Properties/launchSettings.json
-
-appsettings.json
-appsettings.template.json
-appsettings.Development.json
-
-.gitignore
-
-Controllers/TestController.cs
