@@ -1,0 +1,125 @@
+version: '3.9'  # Docker Compose version
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: restaurant-manager-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro # ro - read-only -> nginx won't be able to change the config
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot
+    depends_on:
+      - backend
+    networks:
+      - restaurant-network
+  
+  certbot:
+    image: certbot/certbot
+    container_name: restaurant-manager-certbot
+    volumes:
+      # Stores certificates and keys
+      - certbot-etc:/etc/letsencrypt
+      # Used during validation - temp data
+      - certbot-var:/var/lib/letsencrypt
+      # Used for storing challenge files
+      - certbot-www:/var/www/certbot
+    entrypoint: sh
+    # Runs forever, checking twice per day (sleep 12h) whether any certificates need renewal
+    # When renewed, reloads Nginx so it picks up new certs
+    command: -c "
+      trap exit TERM;
+      while :; do
+        certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker exec restaurant-manager-nginx nginx -s reload' --quiet;
+        sleep 12h;
+      done"
+    depends_on:
+      - nginx
+
+  backend:
+    image: restaurant-manager-backend:latest
+    deploy:
+      replicas: 3
+    restart: always
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__PostgresConnection=Server=db;Database=${POSTGRES_DB};Port=5432;User Id=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
+      - JwtSettings__ServerSecretKey=${JWT_SERVER_SECRET_KEY}
+      - JwtSettings__AccessTokenLifetime=${JWT_ACCESS_TOKEN_LIFETIME}
+      - SessionSettings__RefreshTokenLength=${SESSION_REFRESH_TOKEN_LENGTH}
+      - SessionSettings__ServerSecretKey=${SESSION_SERVER_SECRET_KEY}
+      - SessionSettings__SessionLifetime=${SESSION_LIFETIME}
+      - SessionSettings__RetentionDays=${SESSION_RETENTION_DAYS}
+      - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
+      - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASPNETCORE}
+      - ASPNETCORE_ALLOWEDHOSTS=${ASPNETCORE_ALLOWED_HOSTS}
+    depends_on:
+      db:
+        condition: service_healthy # Ensure DB is ready
+      migrator:
+        condition: service_completed_successfully # Wait for successful migration
+    networks:
+      - restaurant-network
+
+  migrator:
+    image: restaurant-manager-backend:latest
+    container_name: restaurant-manager-migrator
+    restart: "no"
+    # profiles: ["migrate"] # Allows manual migration control
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      # In order to run the app as a migrator the env must be `Migration`
+      - ASPNETCORE_ENVIRONMENT=Migration
+      - ConnectionStrings__PostgresConnection=Server=db;Database=${POSTGRES_DB};Port=5432;User Id=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
+      - JwtSettings__ServerSecretKey=${JWT_SERVER_SECRET_KEY}
+      - JwtSettings__AccessTokenLifetime=${JWT_ACCESS_TOKEN_LIFETIME}
+      - SessionSettings__RefreshTokenLength=${SESSION_REFRESH_TOKEN_LENGTH}
+      - SessionSettings__ServerSecretKey=${SESSION_SERVER_SECRET_KEY}
+      - SessionSettings__SessionLifetime=${SESSION_LIFETIME}
+      - SessionSettings__RetentionDays=${SESSION_RETENTION_DAYS}
+      - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
+      - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASPNETCORE}
+      - ASPNETCORE_ALLOWEDHOSTS=${ASPNETCORE_ALLOWED_HOSTS}
+    depends_on:
+      db:
+        condition: service_healthy # Ensure DB is ready
+    networks:
+      - restaurant-network
+
+  db:
+    image: postgres:18
+    container_name: restaurant-manager-db
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+    networks:
+      - restaurant-network
+
+volumes:
+  db_data:
+  certbot-etc:
+  certbot-var:
+  certbot-www:
+
+networks:
+  restaurant-network:
