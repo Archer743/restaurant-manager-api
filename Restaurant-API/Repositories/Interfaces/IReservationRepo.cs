@@ -7,23 +7,25 @@ namespace Restaurant_API.Repositories.Interfaces
     {
         Task AddAsync(Reservation reservation);
 
-        IQueryable<Reservation> GetPendingReservationsBaseQuery(Guid restaurantId);
+		Task UpdateAsync(Reservation reservation);
 
-        Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
+		Task RemoveAsync(Reservation reservation);
+
+		Task<int> RemoveReservationsCreatedBeforeAsync(DateTime cutoffUtc);
+
+		Task<Reservation?> GetByIdAsync(Guid id);
+
+		Task<Reservation?> GetByIdWithDetailsAsync(Guid id);
+
+		Task<Reservation?> GetByTagAsync(Guid restaurantId, string tag);
+
+		IQueryable<Reservation> GetPendingReservationsBaseQuery(Guid restaurantId);
+
+		Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
 
         Task<HashSet<Guid>> GetReservedTableIdsInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
 
         /// <returns>A dictionary where the key is the table's ID and the value is the ID of the reservation currently occupying that table.</returns>
         Task<Dictionary<Guid, Guid>> GetReservedTablesInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
-
-        Task<Reservation?> GetByIdAsync(Guid id);
-
-        Task<Reservation?> GetByIdWithDetailsAsync(Guid id);
-
-        Task<Reservation?> GetByTagAsync(Guid restaurantId, string tag);
-
-        Task UpdateAsync(Reservation reservation);
-
-        Task RemoveAsync(Reservation reservation);
-    }
+	}
 }

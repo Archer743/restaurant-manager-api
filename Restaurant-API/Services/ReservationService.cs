@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Restaurant_API.Constants;
 using Restaurant_API.Data.Entities;
 using Restaurant_API.Data.Entities.Enums;
@@ -9,6 +11,7 @@ using Restaurant_API.Data.Models.Reservation.Enums;
 using Restaurant_API.Exceptions;
 using Restaurant_API.Repositories.Interfaces;
 using Restaurant_API.Services.Interfaces;
+using Restaurant_API.Settings;
 using System.Text;
 
 namespace Restaurant_API.Services
@@ -19,19 +22,36 @@ namespace Restaurant_API.Services
         private readonly string tagChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         private readonly int tagLen = 6;
 
+        private readonly ReservationCleanup cleanupSettings;
+
         private readonly IRoleService roleService;
         private readonly IRestaurantService restaurantService;
         private readonly IShiftService shiftService;
 
         private readonly IReservationRepo reservationRepo;
 
-        public ReservationService(IRoleService roleService, IRestaurantService restaurantService, IShiftService shiftService, IReservationRepo reservationRepo)
+		private readonly ILogger<ReservationService> logger;
+
+		public ReservationService(
+            IOptions<ReservationCleanup> settings,
+            
+            IRoleService roleService,
+            IRestaurantService restaurantService,
+            IShiftService shiftService,
+
+            IReservationRepo reservationRepo,
+            
+            ILogger<ReservationService> logger)
         {
+            cleanupSettings = settings.Value;
+
             this.roleService = roleService;
             this.restaurantService = restaurantService;
             this.shiftService = shiftService;
 
             this.reservationRepo = reservationRepo;
+
+            this.logger = logger;
 		}
 
         public async Task CreateClientReservationAsync(ClientCreateReservationModel createModel)
@@ -329,6 +349,15 @@ namespace Restaurant_API.Services
 
             await reservationRepo.RemoveAsync(reservation);
         }
+
+        public async Task CleanupExpiredReservationsAsync()
+        {
+			DateTime cutoffUtc = DateTime.UtcNow.AddMonths(-(int)cleanupSettings.RetentionMonths);
+
+            int removed = await reservationRepo.RemoveReservationsCreatedBeforeAsync(cutoffUtc);
+
+            if (removed > 0) logger.LogInformation("Removed {RemovedCount} expired reservations!", removed);
+		}
 
         public async Task<Reservation> GetReservationIfOwnedAsync(HttpContext ctx, Guid reservationId, bool includeDetails = false)
         {

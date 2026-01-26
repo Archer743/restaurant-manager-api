@@ -13,7 +13,10 @@ namespace Restaurant_API.Services.Interfaces
 
 		Task EndCurrSessionAsync(HttpContext ctx);
 
-		Task RemoveOldInactiveSessionsAsync();
+		/// <summary>
+		/// Cleans up all inactive sessions (expired or revoked) that have passed the configured retention period.
+		/// </summary>
+		Task CleanupInactiveSessionsAsync();
 
 		bool IsSessionInactive(Session session);
 	}

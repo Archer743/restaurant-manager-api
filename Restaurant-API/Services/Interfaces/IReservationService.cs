@@ -26,6 +26,11 @@ namespace Restaurant_API.Services.Interfaces
 
         Task RemoveAsync(HttpContext ctx, Guid reservationId);
 
+		/// <summary>
+		/// Cleans up all reservations that have passed the configured retention period.
+		/// </summary>
+		Task CleanupExpiredReservationsAsync();
+
         Task<Reservation> GetReservationIfOwnedAsync(HttpContext ctx, Guid reservationId, bool includeDetails = false);
     }
 }

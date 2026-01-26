@@ -26,10 +26,11 @@ namespace Restaurant_API.Repositories
 			await context.SaveChangesAsync();
 		}
 
-		public async Task RemoveRangeAsync(IEnumerable<Session> sessions)
+		public async Task<int> RemoveInactiveSessionsBeforeAsync(DateTime cutoffUtc)
 		{
-			context.Sessions.RemoveRange(sessions);
-			await context.SaveChangesAsync();
+			return await context.Sessions
+								.Where(session => session.ExpiresAt < cutoffUtc)
+								.ExecuteDeleteAsync();
 		}
 
 		public async Task<Session?> GetByIdAsync(Guid id)
@@ -53,16 +54,5 @@ namespace Restaurant_API.Repositories
 			return await context.Sessions
 								.AnyAsync(session => session.RefreshTokenHash == refreshTokenHash);
         }
-
-        public async Task<List<Session>> GetOldInactiveSessionsAsync(uint thresholdDays)
-		{
-			var thresholdDate = DateTime.UtcNow.AddDays(-thresholdDays);
-
-			return await context.Sessions
-								.Where(session =>
-									(session.ExpiresAt < DateTime.UtcNow || session.IsRevoked)
-									&& session.ExpiresAt < thresholdDate)
-								.ToListAsync();
-		}
     }
 }

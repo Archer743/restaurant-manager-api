@@ -8,14 +8,12 @@ namespace Restaurant_API.Repositories.Interfaces
 
 		Task UpdateAsync(Session session);
 
-		Task RemoveRangeAsync(IEnumerable<Session> sessions);
+		Task<int> RemoveInactiveSessionsBeforeAsync(DateTime cutoffUtc);
 
 		Task<Session?> GetByIdAsync(Guid id);
 
 		Task<Session?> GetByHashedTokenAsync(string refreshTokenHash);
 
         Task<bool> HashExistsAsync(string refreshTokenHash);
-
-        Task<List<Session>> GetOldInactiveSessionsAsync(uint thresholdDays);
-    }
+	}
 }

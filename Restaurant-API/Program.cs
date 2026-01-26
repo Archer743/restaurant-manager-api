@@ -32,6 +32,9 @@ namespace Restaurant_API
 
 			builder.Services.AddOptions<SessionSettings>().BindConfiguration("SessionSettings")
 							.ValidateDataAnnotations().ValidateOnStart();
+
+			builder.Services.AddOptions<ReservationCleanup>().BindConfiguration("ReservationCleanup")
+							.ValidateDataAnnotations().ValidateOnStart();
         }
 
 		private static void ConfigureServices(WebApplicationBuilder builder)
@@ -141,6 +144,25 @@ namespace Restaurant_API
 			builder.Services.AddScoped<IReservationService, ReservationService>();
         }
 
+		// Hangfire recurring jobs setup
+		private static void ConfigureRecurringJobs(WebApplication app)
+		{
+			using var scope = app.Services.CreateScope();
+			var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+
+			recurringJobManager.AddOrUpdate<ISessionService>(
+				"cleanup-inactive-sessions-job",
+				service => service.CleanupInactiveSessionsAsync(),
+				Cron.Daily()
+			);
+
+			recurringJobManager.AddOrUpdate<IReservationService>(
+				"cleanup-expired-reservations-job",
+				service => service.CleanupExpiredReservationsAsync(),
+				Cron.Daily()
+			);
+		}
+
 		private static void ConfigureApp(WebApplication app)
 		{
 			// Allow Nginx to forward HTTPS and client IP info
@@ -183,16 +205,7 @@ namespace Restaurant_API
 			app.MapControllers();
 
 
-			// Hangfire Recurring Jobs setup
-			using var scope = app.Services.CreateScope();
-			var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-
-			// Will remove old inactive sessions at midnight UTC everyday
-			recurringJobManager.AddOrUpdate<ISessionService>(
-				"rm-old-inactive-sessions-job",
-				service => service.RemoveOldInactiveSessionsAsync(),
-				Cron.Daily()
-			);
+			ConfigureRecurringJobs(app);
 		}
 
 		public static async Task Main(string[] args)

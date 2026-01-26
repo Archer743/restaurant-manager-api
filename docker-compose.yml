@@ -10,35 +10,35 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro # ro - read-only -> nginx won't be able to change the config
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
+      # - certbot-etc:/etc/letsencrypt
+      # - certbot-var:/var/lib/letsencrypt
+      # - certbot-www:/var/www/certbot
     depends_on:
       - backend
     networks:
       - restaurant-network
   
-  certbot:
-    image: certbot/certbot
-    container_name: restaurant-manager-certbot
-    volumes:
-      # Stores certificates and keys
-      - certbot-etc:/etc/letsencrypt
-      # Used during validation - temp data
-      - certbot-var:/var/lib/letsencrypt
-      # Used for storing challenge files
-      - certbot-www:/var/www/certbot
-    entrypoint: sh
-    # Runs forever, checking twice per day (sleep 12h) whether any certificates need renewal
-    # When renewed, reloads Nginx so it picks up new certs
-    command: -c "
-      trap exit TERM;
-      while :; do
-        certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker exec restaurant-manager-nginx nginx -s reload' --quiet;
-        sleep 12h;
-      done"
-    depends_on:
-      - nginx
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: restaurant-manager-certbot
+  #   volumes:
+  #     # Stores certificates and keys
+  #     - certbot-etc:/etc/letsencrypt
+  #     # Used during validation - temp data
+  #     - certbot-var:/var/lib/letsencrypt
+  #     # Used for storing challenge files
+  #     - certbot-www:/var/www/certbot
+  #   entrypoint: sh
+  #   # Runs forever, checking twice per day (sleep 12h) whether any certificates need renewal
+  #   # When renewed, reloads Nginx so it picks up new certs
+  #   command: -c "
+  #     trap exit TERM;
+  #     while :; do
+  #       certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker exec restaurant-manager-nginx nginx -s reload' --quiet;
+  #       sleep 12h;
+  #     done"
+  #   depends_on:
+  #     - nginx
 
   backend:
     image: restaurant-manager-backend:latest
@@ -57,6 +57,7 @@ services:
       - SessionSettings__ServerSecretKey=${SESSION_SERVER_SECRET_KEY}
       - SessionSettings__SessionLifetime=${SESSION_LIFETIME}
       - SessionSettings__RetentionDays=${SESSION_RETENTION_DAYS}
+      - ReservationCleanup__RetentionMonths=${RESERVATION_RETENTION_MONTHS}
       - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
       - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASPNETCORE}
       - ASPNETCORE_ALLOWEDHOSTS=${ASPNETCORE_ALLOWED_HOSTS}
@@ -86,6 +87,7 @@ services:
       - SessionSettings__ServerSecretKey=${SESSION_SERVER_SECRET_KEY}
       - SessionSettings__SessionLifetime=${SESSION_LIFETIME}
       - SessionSettings__RetentionDays=${SESSION_RETENTION_DAYS}
+      - ReservationCleanup__RetentionMonths=${RESERVATION_RETENTION_MONTHS}
       - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
       - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASPNETCORE}
       - ASPNETCORE_ALLOWEDHOSTS=${ASPNETCORE_ALLOWED_HOSTS}
@@ -117,9 +119,9 @@ services:
 
 volumes:
   db_data:
-  certbot-etc:
-  certbot-var:
-  certbot-www:
+  # certbot-etc:
+  # certbot-var:
+  # certbot-www:
 
 networks:
   restaurant-network:

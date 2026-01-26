@@ -21,11 +21,18 @@ namespace Restaurant_API.Services
 		private readonly IAuthTokenService authTokenService;
 		private readonly ISessionRepo sessionRepo;
 
-		public SessionService(IOptions<SessionSettings> settings, IAuthTokenService authTokenService, ISessionRepo sessionRepo)
+        private readonly ILogger<SessionService> logger;
+
+		public SessionService(
+            IOptions<SessionSettings> settings,
+            IAuthTokenService authTokenService,
+            ISessionRepo sessionRepo,
+			ILogger<SessionService> logger)
 		{
 			sessionSettings = settings.Value;
 			this.authTokenService = authTokenService;
 			this.sessionRepo = sessionRepo;
+            this.logger = logger;
 		}
 
         public async Task<Session?> GetSessionByIdAsync(Guid sessionId)
@@ -98,10 +105,13 @@ namespace Restaurant_API.Services
 			await sessionRepo.UpdateAsync(currSession);
 		}
 
-		public async Task RemoveOldInactiveSessionsAsync()
+		public async Task CleanupInactiveSessionsAsync()
 		{
-			var oldSessions = await sessionRepo.GetOldInactiveSessionsAsync(sessionSettings.RetentionDays);
-			await sessionRepo.RemoveRangeAsync(oldSessions);
+            DateTime cutoffUtc = DateTime.UtcNow.AddDays(-sessionSettings.RetentionDays);
+
+            int removed = await sessionRepo.RemoveInactiveSessionsBeforeAsync(cutoffUtc);
+
+			if (removed > 0) logger.LogInformation("Removed {RemovedCount} inactive sessions!", removed);
 		}
 
         public bool IsSessionInactive(Session session)

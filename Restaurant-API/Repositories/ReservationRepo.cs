@@ -21,14 +21,54 @@ namespace Restaurant_API.Repositories
             await context.SaveChangesAsync();
         }
 
-        public IQueryable<Reservation> GetPendingReservationsBaseQuery(Guid restaurantId)
+		public async Task UpdateAsync(Reservation reservation)
+		{
+			context.Reservations.Update(reservation);
+			await context.SaveChangesAsync();
+		}
+
+		public async Task RemoveAsync(Reservation reservation)
+		{
+			context.Reservations.Remove(reservation);
+			await context.SaveChangesAsync();
+		}
+
+		public async Task<int> RemoveReservationsCreatedBeforeAsync(DateTime cutoffUtc)
+		{
+			return await context.Reservations
+						        .Where(r => r.CreatedAtUtc < cutoffUtc)
+						        .ExecuteDeleteAsync();
+		}
+
+		public async Task<Reservation?> GetByIdAsync(Guid id)
+		{
+			return await context.Reservations
+								.FirstOrDefaultAsync(r => r.Id == id);
+		}
+
+		public async Task<Reservation?> GetByIdWithDetailsAsync(Guid id)
+		{
+			return await context.Reservations
+								.Include(r => r.Restaurant)
+								.Include(r => r.Tables)
+								.FirstOrDefaultAsync(r => r.Id == id);
+		}
+
+		public async Task<Reservation?> GetByTagAsync(Guid restaurantId, string tag)
+		{
+			return await context.Reservations
+								.FirstOrDefaultAsync(r => r.RestaurantId == restaurantId &&
+														  r.Tag == tag);
+		}
+
+		public IQueryable<Reservation> GetPendingReservationsBaseQuery(Guid restaurantId)
         {
             return context.Reservations
                           .Where(r => r.RestaurantId == restaurantId &&
                                       r.State == ReservationState.Pending);
         }
 
-        public async Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc)
+		public async Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc)
         {
             return await context.Reservations
                                 .Where(r => r.RestaurantId == restaurantId &&
@@ -62,39 +102,6 @@ namespace Restaurant_API.Repositories
                                     g => g.Key,
                                     g => g.First().ReservationId
                                 );
-        }
-
-        public async Task<Reservation?> GetByIdAsync(Guid id)
-        {
-            return await context.Reservations
-                                .FirstOrDefaultAsync(r => r.Id == id);
-        }
-
-        public async Task<Reservation?> GetByIdWithDetailsAsync(Guid id)
-        {
-            return await context.Reservations
-                                .Include(r => r.Restaurant)
-                                .Include(r => r.Tables)
-                                .FirstOrDefaultAsync(r => r.Id == id);
-        }
-
-        public async Task<Reservation?> GetByTagAsync(Guid restaurantId, string tag)
-        {
-            return await context.Reservations
-                                .FirstOrDefaultAsync(r => r.RestaurantId == restaurantId &&
-                                                          r.Tag == tag);
-        }
-
-        public async Task UpdateAsync(Reservation reservation)
-        {
-            context.Reservations.Update(reservation);
-            await context.SaveChangesAsync();
-        }
-
-        public async Task RemoveAsync(Reservation reservation)
-        {
-            context.Reservations.Remove(reservation);
-            await context.SaveChangesAsync();
         }
     }
 }
