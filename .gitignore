@@ -1,6 +1,7 @@
 # Custom
 /.vscode
 /.env
+/nginx.conf
 /Restaurant-API/appsettings.json
 /Restaurant-API/Controllers/TestController.cs
 

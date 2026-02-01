@@ -56,19 +56,50 @@ http {
     }
 
 
-    # For testing
+    # =================================================================
+    # HTTP SERVER (Port 80) - Certbot & Redirect
+
     server {
         listen 80;
+        server_name ${DOMAIN};
+        
+        # Handles ACME HTTP-01 challenge requests from Let’s Encrypt
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+            autoindex off; # prohibit directory listing
+        }
+
+        # Redirect all other HTTP traffic to HTTPS
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+
+
+    # =================================================================
+    # HTTPS SERVER (Port 443) - SSL Termination & Proxy
+
+    server {
+        # ssl -> tells Nginx this server will use TLS encryption
+        listen 443 ssl;
+        server_name ${DOMAIN};
 
         # Apply max concurrent connections per IP
         limit_conn conn_limit 20;
 
+        # ======================== SSL configuration
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5; # Strong ciphers only
+
         # ======================== Proxy headers
         # Ensure the backend receives the correct context from the original client request
+    
         proxy_set_header Host $host;  # Preserve the original domain name (fallback)
         proxy_set_header X-Forwarded-Host $host; # Preserve the original domain name
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add the client’s IP to a chain of forwarded addresses
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add the client's IP to a chain of forwarded addresses
         proxy_set_header X-Forwarded-Proto https;
 
         # proxy_pass - forwards incoming requests to the upstream group via HTTP (SSL termination)
@@ -87,66 +118,4 @@ http {
             return 404;
         }
     }
-
-
-    # =================================================================
-    # HTTP SERVER (Port 80) - Certbot & Redirect
-
-    # server {
-    #     listen 80;
-        
-    #     # Handles ACME HTTP-01 challenge requests from Let’s Encrypt
-    #     location /.well-known/acme-challenge/ {
-    #         root /var/www/certbot;
-    #         autoindex off; # prohibit directory listing
-    #     }
-
-    #     # Redirect all other HTTP traffic to HTTPS
-    #     location / {
-    #         return 301 https://$host$request_uri;
-    #     }
-    # }
-
-
-    # =================================================================
-    # HTTPS SERVER (Port 443) - SSL Termination & Proxy
-
-    # server {
-    #     # ssl -> tells Nginx this server will use TLS encryption
-    #     listen 443 ssl;
-
-    #     # Apply max concurrent connections per IP
-    #     limit_conn conn_limit 20;
-
-    #     # ======================== SSL configuration
-    #     ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
-    #     ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
-    #     ssl_protocols TLSv1.2 TLSv1.3;
-    #     ssl_ciphers HIGH:!aNULL:!MD5; # Strong ciphers only
-
-    #     # ======================== Proxy headers
-    #     # Ensure the backend receives the correct context from the original client request
-    
-    #     proxy_set_header Host $host;  # Preserve the original domain name (fallback)
-    #     proxy_set_header X-Forwarded-Host $host; # Preserve the original domain name
-    #     proxy_set_header X-Real-IP $remote_addr;
-    #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # Add the client’s IP to a chain of forwarded addresses
-    #     proxy_set_header X-Forwarded-Proto https;
-
-    #     # proxy_pass - forwards incoming requests to the upstream group via HTTP (SSL termination)
-
-    #     location ~ ^/api/auth/(login|register|refresh) {
-    #         limit_req zone=auth_limit burst=5 nodelay;
-    #         proxy_pass http://backend_cluster;
-    #     }
-
-    #     location /api/ {
-    #         limit_req zone=api_limit burst=20 nodelay;
-    #         proxy_pass http://backend_cluster;
-    #     }
-
-    #     location / {
-    #         return 404;
-    #     }
-    # }
 }
