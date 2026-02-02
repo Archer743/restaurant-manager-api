@@ -8,6 +8,20 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # Periodically reload Nginx so it can pick up renewed TLS certificates.
+    #
+    # IMPORTANT:
+    # It is NOT a problem if Nginx does not reload immediately after Certbot renews a certificate.
+    # Let's Encrypt renews certificates ~30 days before expiration, and the old certificate
+    # remains valid until it actually expires.
+    entrypoint: sh
+    command: -c "
+      while :; do
+        sleep 12h;
+        echo '[nginx] Periodic reload to pick up new certificates';
+        nginx -s reload;
+      done &
+      nginx -g 'daemon off;'"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro # ro - read-only -> nginx won't be able to change the config
       - certbot-etc:/etc/letsencrypt # Https certificate
@@ -21,13 +35,16 @@ services:
     image: certbot/certbot
     container_name: restaurant-manager-certbot
     restart: always
-    entrypoint: sh # Starts shell
-    # Runs forever, checking twice per day (sleep 12h) whether any certificates need renewal
-    # When renewed, reloads Nginx so it picks up new certs
+    # Checks twice per day whether any certificate is due for renewal.
+    #
+    # After renewal, the new certificates are written to the shared volume,
+    # and Nginx will pick them up on its next scheduled reload.
+    entrypoint: sh
     command: -c "
       trap exit TERM;
       while :; do
-        certbot renew --webroot -w /var/www/certbot --deploy-hook 'docker exec restaurant-manager-nginx nginx -s reload' --quiet;
+        echo '[certbot] Checking certificates for renewal';
+        certbot renew --webroot -w /var/www/certbot --quiet;
         sleep 12h;
       done"
     volumes:
