@@ -73,7 +73,7 @@ namespace Restaurant_API.Migrations
                     b.Property<Guid>("RestaurantId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("StartTimeUtc")
+                    b.Property<DateTime>("StartUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("State")

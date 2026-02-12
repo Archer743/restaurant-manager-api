@@ -8,7 +8,7 @@
 
         public string Name { get; set; } = string.Empty;
 
-        public DateTime StartTimeUtc { get; set; }
+        public DateTime StartUtc { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
 

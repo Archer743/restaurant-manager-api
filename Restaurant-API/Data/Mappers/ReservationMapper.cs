@@ -12,7 +12,7 @@ namespace Restaurant_API.Data.Mappers
                 // Tag is set in ReservationService
                 RestaurantId = createModel.RestaurantId,
                 Name = createModel.Name,
-                StartTimeUtc = createModel.StartTimeUtc,
+                StartUtc = createModel.StartUtc,
                 PeopleCount = createModel.PeopleCount,
                 Email = createModel.Email,
                 Phone = createModel.Phone,
@@ -27,7 +27,7 @@ namespace Restaurant_API.Data.Mappers
                 // Tag is set in ReservationService
                 // RestaurantId is set in ReservationService based on the current user
                 Name = createModel.Name,
-                StartTimeUtc = createModel.StartTimeUtc,
+                StartUtc = createModel.StartUtc,
                 PeopleCount = createModel.PeopleCount,
                 Email = createModel.Email,
                 Phone = createModel.Phone,
@@ -42,8 +42,8 @@ namespace Restaurant_API.Data.Mappers
                 Id = reservation.Id,
                 Tag = reservation.Tag,
                 Name = reservation.Name,
-                // Converts StartTimeUtc to local time based on the restaurant time zone and extracts the time
-                Time = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(reservation.StartTimeUtc, restaurantTimeZone)),
+                // Converts StartUtc to local time based on the restaurant time zone and extracts the time
+                Time = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(reservation.StartUtc, restaurantTimeZone)),
                 PeopleCount = reservation.PeopleCount,
                 // TableCount is set in ReservationService
             };
@@ -56,7 +56,7 @@ namespace Restaurant_API.Data.Mappers
                 Id = reservation.Id,
                 Tag = reservation.Tag,
                 Name = reservation.Name,
-				StartTimeUtc = reservation.StartTimeUtc,
+				StartUtc = reservation.StartUtc,
                 PeopleCount = reservation.PeopleCount,
                 IsClosed = reservation.IsClosed,
             };
@@ -69,7 +69,7 @@ namespace Restaurant_API.Data.Mappers
                 Id = reservation.Id,
                 Tag = reservation.Tag,
                 Name = reservation.Name,
-                StartTimeUtc = reservation.StartTimeUtc,
+                StartUtc = reservation.StartUtc,
                 CreatedAtUtc = reservation.CreatedAtUtc,
                 PeopleCount = reservation.PeopleCount,
             };
@@ -82,7 +82,7 @@ namespace Restaurant_API.Data.Mappers
                 Id = reservation.Id,
                 Tag = reservation.Tag,
                 Name = reservation.Name,
-                StartTimeUtc = reservation.StartTimeUtc,
+                StartUtc = reservation.StartUtc,
                 PeopleCount = reservation.PeopleCount,
                 Email = reservation.Email,
                 Phone = reservation.Phone,

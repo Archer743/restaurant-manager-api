@@ -28,7 +28,7 @@ namespace Restaurant_API.Data.Entities
 
 
         [Required]
-        public DateTime StartTimeUtc { get; set; }
+        public DateTime StartUtc { get; set; }
 
 
         [Required, Range(1, 100)]

@@ -15,7 +15,7 @@ namespace Restaurant_API.Data.Models.Reservation
         public string? Phone { get; set; }
 
         [MustBeUtc]
-        public DateTime? StartTimeUtc { get; set; }
+        public DateTime? StartUtc { get; set; }
 
         [Range(1, 100)]
         public int? PeopleCount { get; set; }

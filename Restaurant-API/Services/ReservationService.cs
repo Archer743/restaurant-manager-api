@@ -70,13 +70,13 @@ namespace Restaurant_API.Services
             Restaurant restaurant = await restaurantService.GetByIdAsync(reservation.RestaurantId);
 
             // Validate reservation start time (must not be in the past)
-            if (reservation.StartTimeUtc < DateTime.UtcNow)
+            if (reservation.StartUtc < DateTime.UtcNow)
             {
                 throw new BadRequestException(ErrorCodes.Data.InvalidDate);
             }
 
-            // Validate that StartTimeUtc is within a restaurant shift
-            if (!await shiftService.HasShiftAtTimeAsync(restaurant, reservation.StartTimeUtc))
+            // Validate that StartUtc is within a restaurant shift
+            if (!await shiftService.HasShiftAtTimeAsync(restaurant, reservation.StartUtc))
             {
                 throw new BadRequestException(ErrorCodes.Reservation.StartTimeOutsideShift);
             }
@@ -102,13 +102,13 @@ namespace Restaurant_API.Services
             reservation.Comment = string.IsNullOrWhiteSpace(reservation.Comment) ? null : reservation.Comment;
 
             // Disallow creating a reservation to a past moment unless the user has the Admin role.
-            if (reservation.StartTimeUtc < DateTime.UtcNow && !roleService.HasCurrUserRole(ctx, Roles.Admin))
+            if (reservation.StartUtc < DateTime.UtcNow && !roleService.HasCurrUserRole(ctx, Roles.Admin))
             {
                 throw new ForbiddenException(ErrorCodes.Reservation.CannotCreateInPast);
             }
 
-            // Validate that StartTimeUtc is within a restaurant shift
-            if (!await shiftService.HasShiftAtTimeAsync(currUserRestaurant, reservation.StartTimeUtc))
+            // Validate that StartUtc is within a restaurant shift
+            if (!await shiftService.HasShiftAtTimeAsync(currUserRestaurant, reservation.StartUtc))
             {
                 throw new BadRequestException(ErrorCodes.Reservation.StartTimeOutsideShift);
             }
@@ -242,19 +242,19 @@ namespace Restaurant_API.Services
                 isModified = true;
             }
 
-            // Apply StartTimeUtc update
-            if (updateModel.StartTimeUtc.HasValue && reservation.StartTimeUtc != updateModel.StartTimeUtc.Value)
+            // Apply StartUtc update
+            if (updateModel.StartUtc.HasValue && reservation.StartUtc != updateModel.StartUtc.Value)
             {
                 // Disallow moving a reservation to a past date unless the user has the Admin role.
-                if (updateModel.StartTimeUtc.Value < DateTime.UtcNow && !roleService.HasCurrUserRole(ctx, Roles.Admin))
+                if (updateModel.StartUtc.Value < DateTime.UtcNow && !roleService.HasCurrUserRole(ctx, Roles.Admin))
                 {
                     throw new ForbiddenException(ErrorCodes.Reservation.CannotModifyToPast);
                 }
 
                 // Ensure reservation can be moved to the new shift
-                await shiftService.ValidateReservationShiftChangeAsync(reservation, updateModel.StartTimeUtc.Value);
+                await shiftService.ValidateReservationShiftChangeAsync(reservation, updateModel.StartUtc.Value);
 
-                reservation.StartTimeUtc = updateModel.StartTimeUtc.Value;
+                reservation.StartUtc = updateModel.StartUtc.Value;
                 isModified = true;
             }
 

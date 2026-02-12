@@ -73,7 +73,7 @@ namespace Restaurant_API.Repositories
             return await context.Reservations
                                 .Where(r => r.RestaurantId == restaurantId &&
                                             r.State == ReservationState.Confirmed &&
-                                            r.StartTimeUtc >= rangeStartUtc && r.StartTimeUtc < rangeEndUtc)
+                                            r.StartUtc >= rangeStartUtc && r.StartUtc < rangeEndUtc)
                                 .ToListAsync();
         }
 
@@ -83,7 +83,7 @@ namespace Restaurant_API.Repositories
                                 .Include(r => r.Tables)
                                 .Where(r => r.RestaurantId == restaurantId &&
                                             r.State == ReservationState.Confirmed && !r.IsClosed &&
-                                            r.StartTimeUtc >= periodStartUtc && r.StartTimeUtc < periodEndUtc)
+                                            r.StartUtc >= periodStartUtc && r.StartUtc < periodEndUtc)
                                 .SelectMany(r => r.Tables.Select(t => t.Id))
                                 .ToHashSetAsync();
         }
@@ -95,7 +95,7 @@ namespace Restaurant_API.Repositories
                                 .Include(r => r.Tables)
                                 .Where(r => r.RestaurantId == restaurantId &&
                                             r.State == ReservationState.Confirmed && !r.IsClosed &&
-                                            r.StartTimeUtc >= periodStartUtc && r.StartTimeUtc < periodEndUtc)
+                                            r.StartUtc >= periodStartUtc && r.StartUtc < periodEndUtc)
                                 .SelectMany(r => r.Tables.Select(t => new { TableId = t.Id, ReservationId = r.Id }))
                                 .GroupBy(x => x.TableId)
                                 .ToDictionaryAsync(

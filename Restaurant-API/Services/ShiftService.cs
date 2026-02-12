@@ -37,7 +37,7 @@ namespace Restaurant_API.Services
 
         public async Task<ShiftContext> GetShiftContextAsync(Reservation reservation)
         {
-            return await GetShiftContextAsync(reservation.Restaurant, reservation.StartTimeUtc) ??
+            return await GetShiftContextAsync(reservation.Restaurant, reservation.StartUtc) ??
             throw new NotFoundException(ErrorCodes.Reservation.OutsideShift);
         }
 
@@ -52,10 +52,10 @@ namespace Restaurant_API.Services
             return await GetShiftAtTimeAsync(restaurant, dateTimeUtc) != null;
         }
 
-        public async Task ValidateReservationShiftChangeAsync(Reservation reservation, DateTime newStartTimeUtc)
+        public async Task ValidateReservationShiftChangeAsync(Reservation reservation, DateTime newStartUtc)
         {
-            Shift? currShift = await GetShiftAtTimeAsync(reservation.Restaurant, reservation.StartTimeUtc);
-            ShiftContext? newShiftCtx = await GetShiftContextAsync(reservation.Restaurant, newStartTimeUtc);
+            Shift? currShift = await GetShiftAtTimeAsync(reservation.Restaurant, reservation.StartUtc);
+            ShiftContext? newShiftCtx = await GetShiftContextAsync(reservation.Restaurant, newStartUtc);
 
             if (newShiftCtx == null)
             {
@@ -63,7 +63,7 @@ namespace Restaurant_API.Services
             }
 
             // No need to check conflicts if it's the same shift
-            if (currShift != null && currShift.Id == newShiftCtx.Shift.Id && reservation.StartTimeUtc.Date == newStartTimeUtc.Date) return;
+            if (currShift != null && currShift.Id == newShiftCtx.Shift.Id && reservation.StartUtc.Date == newStartUtc.Date) return;
 
             var currTableIds = reservation.Tables.Select(t => t.Id).ToHashSet();
             var conflicts = currTableIds.Intersect(newShiftCtx.ReservedTableIds).ToList();

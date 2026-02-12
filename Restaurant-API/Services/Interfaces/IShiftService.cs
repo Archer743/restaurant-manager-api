@@ -16,6 +16,6 @@ namespace Restaurant_API.Services.Interfaces
 
         Task<bool> HasShiftAtTimeAsync(Restaurant restaurant, DateTime dateTimeUtc);
 
-        Task ValidateReservationShiftChangeAsync(Reservation reservation, DateTime newStartTimeUtc);
+        Task ValidateReservationShiftChangeAsync(Reservation reservation, DateTime newStartUtc);
     }
 }
