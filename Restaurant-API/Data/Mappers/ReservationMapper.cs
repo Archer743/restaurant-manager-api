@@ -49,15 +49,14 @@ namespace Restaurant_API.Data.Mappers
             };
         }
 
-        public static ReservationCalendarPreviewModel ToCalendarPreview(this Reservation reservation, TimeZoneInfo restaurantTimeZone)
+        public static ReservationCalendarPreviewModel ToCalendarPreview(this Reservation reservation)
         {
             return new ReservationCalendarPreviewModel
             {
                 Id = reservation.Id,
                 Tag = reservation.Tag,
                 Name = reservation.Name,
-                // Converts StartTimeUtc to local time based on the restaurant time zone and extracts the time
-                Time = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(reservation.StartTimeUtc, restaurantTimeZone)),
+				StartTimeUtc = reservation.StartTimeUtc,
                 PeopleCount = reservation.PeopleCount,
                 IsClosed = reservation.IsClosed,
             };

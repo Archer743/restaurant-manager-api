@@ -138,44 +138,17 @@ namespace Restaurant_API.Services
             return preview;
         }
 
-        public async Task<Dictionary<DateOnly, List<ReservationCalendarPreviewModel>>> GetConfirmedReservationsInPeriodAsync(HttpContext ctx, DateOnly start, DateOnly end)
+        public async Task<List<ReservationCalendarPreviewModel>> GetConfirmedReservationsWithinUtcRangeAsync(HttpContext ctx, UtcRangeQuery query)
         {
             Restaurant currUserRestaurant = await restaurantService.GetCurrUserAssociatedRestaurantAsync(ctx);
 
             // Ensure 'start' date is before 'end' date
-            if (start > end)
-            {
-                (start, end) = (end, start);
-            }
+            var (startUtc, endUtc) = query.Normalize();
 
-            // Get TimeZoneInfo object for the restaurant's timezone
-            TimeZoneInfo restaurantTimeZone = restaurantService.GetTimeZoneInfo(currUserRestaurant);
+            var reservations =
+                await reservationRepo.GetConfirmedWithinUtcRangeAsync(currUserRestaurant.Id, startUtc, endUtc);
 
-            // Convert the local 'start' DateOnly to its UTC DateTime equivalent (beginning of the day in restaurant's timezone)
-            DateTime periodStartLocal = start.ToDateTime(new TimeOnly(0, 0, 0), DateTimeKind.Unspecified);
-            DateTime periodStartUtc = TimeZoneInfo.ConvertTimeToUtc(periodStartLocal, restaurantTimeZone);
-
-            // Convert the local 'end' DateOnly to its UTC DateTime equivalent (beginning of the *next* day in restaurant's timezone)
-            // This ensures the entire 'end' day is included in the query range.
-            DateTime nextDayAfterPeriodEndLocal = end.AddDays(1).ToDateTime(new TimeOnly(0, 0, 0), DateTimeKind.Unspecified);
-            DateTime nextDayAfterPeriodEndUtc = TimeZoneInfo.ConvertTimeToUtc(nextDayAfterPeriodEndLocal, restaurantTimeZone);
-
-            // Fetch confirmed reservations for the restaurant within the calculated UTC date range
-            List<Reservation> reservations = await reservationRepo.GetConfirmedInPeriodAsync(currUserRestaurant.Id, periodStartUtc, nextDayAfterPeriodEndUtc);
-
-            // Group reservations by their local date and order by their local time
-            var groupedReservations = reservations
-                // Group by the local calendar date of the reservation
-                .GroupBy(r => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(r.StartTimeUtc, restaurantTimeZone)))
-                .ToDictionary(
-                    g => g.Key,
-                    // Order reservations within each group by their local time and map to preview models
-                    g => g.OrderBy(r => TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(r.StartTimeUtc, restaurantTimeZone)))
-                            .Select(r => r.ToCalendarPreview(restaurantTimeZone))
-                            .ToList()
-                );
-
-            return groupedReservations;
+            return reservations.Select(r => r.ToCalendarPreview()).ToList();
         }
 
         public async Task<PagedResult<PendingReservationPreviewModel>> GetPendingReservationsAsync(HttpContext ctx, PendingReservationsQueryParams queryParams)

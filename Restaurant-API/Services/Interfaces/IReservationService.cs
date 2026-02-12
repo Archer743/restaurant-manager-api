@@ -14,7 +14,7 @@ namespace Restaurant_API.Services.Interfaces
 
         Task<FloorPlanReservationPreviewModel> GetFloorPlanReservationPreviewAsync(HttpContext ctx, Guid reservationId);
 
-        Task<Dictionary<DateOnly, List<ReservationCalendarPreviewModel>>> GetConfirmedReservationsInPeriodAsync(HttpContext ctx, DateOnly start, DateOnly end);
+        Task<List<ReservationCalendarPreviewModel>> GetConfirmedReservationsWithinUtcRangeAsync(HttpContext ctx, UtcRangeQuery query);
 
         Task<PagedResult<PendingReservationPreviewModel>> GetPendingReservationsAsync(HttpContext ctx, PendingReservationsQueryParams queryParams);
 

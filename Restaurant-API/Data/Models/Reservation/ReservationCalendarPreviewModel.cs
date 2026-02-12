@@ -8,10 +8,9 @@
 
         public string Name { get; set; } = string.Empty;
 
-        // Local time of day based on the restaurant time zone
-        public TimeOnly Time { get; set; }
+		public DateTime StartTimeUtc { get; set; }
 
-        public int PeopleCount { get; set; }
+		public int PeopleCount { get; set; }
 
         public bool IsClosed { get; set; }
     }

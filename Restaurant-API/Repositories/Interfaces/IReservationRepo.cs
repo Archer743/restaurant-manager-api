@@ -21,7 +21,7 @@ namespace Restaurant_API.Repositories.Interfaces
 
 		IQueryable<Reservation> GetPendingReservationsBaseQuery(Guid restaurantId);
 
-		Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
+		Task<List<Reservation>> GetConfirmedWithinUtcRangeAsync(Guid restaurantId, DateTime rangeStartUtc, DateTime rangeEndUtc);
 
         Task<HashSet<Guid>> GetReservedTableIdsInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc);
 

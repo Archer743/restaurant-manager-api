@@ -68,12 +68,12 @@ namespace Restaurant_API.Repositories
                                       r.State == ReservationState.Pending);
         }
 
-		public async Task<List<Reservation>> GetConfirmedInPeriodAsync(Guid restaurantId, DateTime periodStartUtc, DateTime periodEndUtc)
+		public async Task<List<Reservation>> GetConfirmedWithinUtcRangeAsync(Guid restaurantId, DateTime rangeStartUtc, DateTime rangeEndUtc)
         {
             return await context.Reservations
                                 .Where(r => r.RestaurantId == restaurantId &&
                                             r.State == ReservationState.Confirmed &&
-                                            r.StartTimeUtc >= periodStartUtc && r.StartTimeUtc < periodEndUtc)
+                                            r.StartTimeUtc >= rangeStartUtc && r.StartTimeUtc < rangeEndUtc)
                                 .ToListAsync();
         }
 
