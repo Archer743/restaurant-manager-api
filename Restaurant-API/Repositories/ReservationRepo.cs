@@ -74,6 +74,7 @@ namespace Restaurant_API.Repositories
                                 .Where(r => r.RestaurantId == restaurantId &&
                                             r.State == ReservationState.Confirmed &&
                                             r.StartUtc >= rangeStartUtc && r.StartUtc < rangeEndUtc)
+                                .OrderBy(r => r.StartUtc)
                                 .ToListAsync();
         }
 
