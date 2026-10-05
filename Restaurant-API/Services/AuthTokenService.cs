@@ -15,10 +15,13 @@ namespace Restaurant_API.Services
 		private readonly JwtSettings jwtSettings;
 		private readonly SessionSettings sessionSettings;
 
-		public AuthTokenService(IOptions<JwtSettings> jwtSettings, IOptions<SessionSettings> sessionSettings)
+		private readonly TimeProvider timeProvider;
+
+		public AuthTokenService(IOptions<JwtSettings> jwtSettings, IOptions<SessionSettings> sessionSettings, TimeProvider timeProvider)
 		{
 			this.jwtSettings = jwtSettings.Value;
 			this.sessionSettings = sessionSettings.Value;
+			this.timeProvider = timeProvider;
 		}
 
 		public UserAuthModel GenerateAuthTokens(Guid userId, Guid sessionId)
@@ -43,7 +46,7 @@ namespace Restaurant_API.Services
         // Access Token is a JWT token
         private string GenerateAccessToken(Guid userId, Guid sessionId)
 		{
-			var expiration = DateTime.UtcNow.Add(jwtSettings.AccessTokenLifetime);
+			var expiration = timeProvider.GetUtcNow().UtcDateTime.Add(jwtSettings.AccessTokenLifetime);
 
 			Claim[] claims = [
 				new Claim("userId", userId.ToString()),

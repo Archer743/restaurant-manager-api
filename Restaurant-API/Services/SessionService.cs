@@ -21,19 +21,25 @@ namespace Restaurant_API.Services
 		private readonly IAuthTokenService authTokenService;
 		private readonly ISessionRepo sessionRepo;
 
+        private readonly TimeProvider timeProvider;
+
         private readonly ILogger<SessionService> logger;
 
 		public SessionService(
             IOptions<SessionSettings> settings,
             IAuthTokenService authTokenService,
             ISessionRepo sessionRepo,
+            TimeProvider timeProvider,
 			ILogger<SessionService> logger)
 		{
 			sessionSettings = settings.Value;
 			this.authTokenService = authTokenService;
 			this.sessionRepo = sessionRepo;
+            this.timeProvider = timeProvider;
             this.logger = logger;
 		}
+
+        private DateTime UtcNow => timeProvider.GetUtcNow().UtcDateTime;
 
         public async Task<Session?> GetSessionByIdAsync(Guid sessionId)
         {
@@ -51,8 +57,8 @@ namespace Restaurant_API.Services
                 Id = sessionId,
                 UserId = userId,
                 RefreshTokenHash = GetHashedRefreshToken(tokens.RefreshToken),
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.Add(sessionSettings.SessionLifetime),
+                CreatedAt = UtcNow,
+                ExpiresAt = UtcNow.Add(sessionSettings.SessionLifetime),
                 IsRevoked = false
             };
 
@@ -86,7 +92,7 @@ namespace Restaurant_API.Services
 			{
                 // Update session's refresh token & extend the session
                 session.RefreshTokenHash = GetHashedRefreshToken(newTokens.RefreshToken);
-                session.ExpiresAt = DateTime.UtcNow.Add(sessionSettings.SessionLifetime);
+                session.ExpiresAt = UtcNow.Add(sessionSettings.SessionLifetime);
                 await sessionRepo.UpdateAsync(session);
 
                 return newTokens;
@@ -107,7 +113,7 @@ namespace Restaurant_API.Services
 
 		public async Task CleanupInactiveSessionsAsync()
 		{
-            DateTime cutoffUtc = DateTime.UtcNow.AddDays(-sessionSettings.RetentionDays);
+            DateTime cutoffUtc = UtcNow.AddDays(-sessionSettings.RetentionDays);
 
             int removed = await sessionRepo.RemoveInactiveSessionsBeforeAsync(cutoffUtc);
 
@@ -117,7 +123,7 @@ namespace Restaurant_API.Services
         public bool IsSessionInactive(Session session)
 		{
 			// Inactive = expired or revoked
-			return session.ExpiresAt < DateTime.UtcNow || session.IsRevoked;
+			return session.ExpiresAt < UtcNow || session.IsRevoked;
 		}
 
 		private async Task<UserAuthModel> GenerateUniqueAuthTokensAsync(Guid userId, Guid sessionId, SessionOperationType operationType)

@@ -1,9 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Options;
 using Hangfire;
 using Hangfire.PostgreSql;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Net.Sockets;
+using Polly;
+using Npgsql;
 using Restaurant_API.Constants;
 using Restaurant_API.Data;
 using Restaurant_API.Middlewares;
@@ -12,9 +18,6 @@ using Restaurant_API.Repositories.Interfaces;
 using Restaurant_API.Services;
 using Restaurant_API.Services.Interfaces;
 using Restaurant_API.Settings;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Restaurant_API.Extensions;
 
 namespace Restaurant_API
@@ -110,6 +113,11 @@ namespace Restaurant_API
 			);
 
 			builder.Services.AddHangfireServer();  // Adds a background worker that processes jobs
+
+
+			// Clock abstraction. Services take a dependency on this instead of DateTime.UtcNow
+			// so time-dependent rules (shift windows, token/session expiry) are testable at a fixed instant.
+			builder.Services.AddSingleton(TimeProvider.System);
 
 
 			/* builder.Services
@@ -208,6 +216,36 @@ namespace Restaurant_API
 			ConfigureRecurringJobs(app);
 		}
 
+		private static async Task WaitForDatabaseAsync(WebApplication app)
+		{
+			var connectionStrings = app.Services.GetRequiredService<IOptions<ConnectionStrings>>().Value;
+
+			var retryPolicy = Policy
+				.Handle<NpgsqlException>()
+				.Or<SocketException>()
+				.WaitAndRetryAsync(
+					retryCount: 10,
+					sleepDurationProvider: attempt => TimeSpan.FromSeconds(attempt * 2), // 2s, 4s, 6s...
+					onRetry: (exception, timeSpan, attempt, _) =>
+					{
+						app.Logger.LogWarning(
+							"Database not ready (attempt {Attempt}/10). Retrying in {Delay}s. Error: {Message}",
+							attempt, timeSpan.TotalSeconds, exception.Message
+						);
+					}
+				);
+
+			await retryPolicy.ExecuteAsync(async () =>
+			{
+				await using var conn = new NpgsqlConnection(connectionStrings.PostgresConnection);
+				await conn.OpenAsync();
+				await using var cmd = new NpgsqlCommand("SELECT 1", conn);
+				await cmd.ExecuteScalarAsync();
+			});
+
+			app.Logger.LogInformation("Database is ready.");
+		}
+
 		public static async Task Main(string[] args)
 		{
 			// Create an app builder
@@ -217,7 +255,10 @@ namespace Restaurant_API
 
 			// Create an app based on the builder
 			var app = builder.Build();
-			app.Logger.LogInformation("==================================== Server running in environment: {env}", app.Environment.EnvironmentName);
+			app.Logger.LogInformation(
+				"==================================== Server running in environment: {env}",
+				app.Environment.EnvironmentName
+			);
 
 			// If the app environment is `Migration` the app will apply db migrations, seed the db
 			// and exit gracefully without running the server.
@@ -227,6 +268,8 @@ namespace Restaurant_API
 				Environment.Exit(0);
 				return;
 			}
+
+			await WaitForDatabaseAsync(app);
 
 			ConfigureApp(app);
 			await app.RunAsync();

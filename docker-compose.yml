@@ -57,7 +57,7 @@ services:
   backend:
     image: restaurant-manager-backend:latest
     deploy:
-      replicas: 3
+      replicas: 2
     restart: always
     environment:
       - ASPNETCORE_URLS=http://+:8080

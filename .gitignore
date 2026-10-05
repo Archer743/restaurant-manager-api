@@ -3,7 +3,7 @@
 /.env
 /nginx.conf
 /Restaurant-API/appsettings.json
-/Restaurant-API/Controllers/TestController.cs
+/docs
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/aspnetcore

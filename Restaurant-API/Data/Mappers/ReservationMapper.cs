@@ -9,6 +9,7 @@ namespace Restaurant_API.Data.Mappers
         {
             return new Reservation
             {
+                // CreatedAtUtc is set in ReservationService
                 // Tag is set in ReservationService
                 RestaurantId = createModel.RestaurantId,
                 Name = createModel.Name,
@@ -24,6 +25,7 @@ namespace Restaurant_API.Data.Mappers
         {
             return new Reservation
             {
+                // CreatedAtUtc is set in ReservationService
                 // Tag is set in ReservationService
                 // RestaurantId is set in ReservationService based on the current user
                 Name = createModel.Name,

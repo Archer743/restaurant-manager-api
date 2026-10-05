@@ -56,7 +56,7 @@ namespace Restaurant_API.Data.Entities
         public bool IsClosed { get; set; } = false;
 
 
-        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAtUtc { get; set; }
 
 
         public ICollection<Table> Tables { get; set; } = [];

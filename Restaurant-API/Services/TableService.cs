@@ -18,7 +18,9 @@ namespace Restaurant_API.Services
         private readonly ITableRepo tableRepo;
         private readonly IReservationRepo reservationRepo;
 
-        public TableService(IReservationService reservationService, IRestaurantService restaurantService, IShiftService shiftService, ITimeZoneService timeZoneService, ITableRepo tableRepo, IReservationRepo reservationRepo)
+        private readonly TimeProvider timeProvider;
+
+        public TableService(IReservationService reservationService, IRestaurantService restaurantService, IShiftService shiftService, ITimeZoneService timeZoneService, ITableRepo tableRepo, IReservationRepo reservationRepo, TimeProvider timeProvider)
         {
             this.reservationService = reservationService;
             this.restaurantService = restaurantService;
@@ -27,6 +29,8 @@ namespace Restaurant_API.Services
 
             this.tableRepo = tableRepo;
             this.reservationRepo = reservationRepo;
+
+            this.timeProvider = timeProvider;
         }
 
         public async Task<FloorPlanViewModel> GetRestaurantFloorPlanAsync(HttpContext ctx, DateOnly date, Guid? shiftId)
@@ -48,7 +52,7 @@ namespace Restaurant_API.Services
                     throw new NotFoundException(ErrorCodes.Restaurant.NoShiftsFound);
                 }
 
-                var (_, localTime) = timeZoneService.ConvertToLocalDateTimeParts(restaurantTimeZone, DateTime.UtcNow);
+                var (_, localTime) = timeZoneService.ConvertToLocalDateTimeParts(restaurantTimeZone, timeProvider.GetUtcNow().UtcDateTime);
 
                 // Loop through shifts to find the current shift or the next chronologically closest one
                 for (int i = 0; i < shifts.Count; i++)
