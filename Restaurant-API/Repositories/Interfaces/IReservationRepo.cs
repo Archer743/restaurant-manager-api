@@ -11,7 +11,7 @@ namespace Restaurant_API.Repositories.Interfaces
 
 		Task RemoveAsync(Reservation reservation);
 
-		Task<int> RemoveReservationsCreatedBeforeAsync(DateTime cutoffUtc);
+		Task<int> RemoveReservationsStartedBeforeAsync(DateTime cutoffUtc);
 
 		Task<Reservation?> GetByIdAsync(Guid id);
 

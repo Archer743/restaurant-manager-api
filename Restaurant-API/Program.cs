@@ -165,8 +165,8 @@ namespace Restaurant_API
 			);
 
 			recurringJobManager.AddOrUpdate<IReservationService>(
-				"cleanup-expired-reservations-job",
-				service => service.CleanupExpiredReservationsAsync(),
+				"cleanup-reservations-past-retention-job",
+				service => service.CleanupReservationsPastRetentionAsync(),
 				Cron.Daily()
 			);
 		}

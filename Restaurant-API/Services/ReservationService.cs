@@ -333,13 +333,13 @@ namespace Restaurant_API.Services
             await reservationRepo.RemoveAsync(reservation);
         }
 
-        public async Task CleanupExpiredReservationsAsync()
+        public async Task CleanupReservationsPastRetentionAsync()
         {
 			DateTime cutoffUtc = UtcNow.AddMonths(-(int)cleanupSettings.RetentionMonths);
 
-            int removed = await reservationRepo.RemoveReservationsCreatedBeforeAsync(cutoffUtc);
+            int removed = await reservationRepo.RemoveReservationsStartedBeforeAsync(cutoffUtc);
 
-            if (removed > 0) logger.LogInformation("Removed {RemovedCount} expired reservations!", removed);
+            if (removed > 0) logger.LogInformation("Removed {RemovedCount} reservations past retention period!", removed);
 		}
 
         public async Task<Reservation> GetReservationIfOwnedAsync(HttpContext ctx, Guid reservationId, bool includeDetails = false)

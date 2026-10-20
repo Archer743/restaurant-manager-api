@@ -33,10 +33,10 @@ namespace Restaurant_API.Repositories
 			await context.SaveChangesAsync();
 		}
 
-		public async Task<int> RemoveReservationsCreatedBeforeAsync(DateTime cutoffUtc)
+		public async Task<int> RemoveReservationsStartedBeforeAsync(DateTime cutoffUtc)
 		{
 			return await context.Reservations
-						        .Where(r => r.CreatedAtUtc < cutoffUtc)
+						        .Where(r => r.StartUtc < cutoffUtc)
 						        .ExecuteDeleteAsync();
 		}
 
